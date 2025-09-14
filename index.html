@@ -1,0 +1,960 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Σχεδιασμός συντελεστή φορτίου και αντίστασης</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            position: relative;
+        }
+
+        .container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, rgba(102, 126, 234, 0.05), rgba(118, 75, 162, 0.05));
+            border-radius: 20px;
+            z-index: -1;
+        }
+
+        .title {
+            text-align: center;
+            font-size: 2.8em;
+            font-weight: 800;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #667eea, #764ba2, #ff6b6b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+            animation: titleGlow 3s ease-in-out infinite alternate;
+        }
+
+        @keyframes titleGlow {
+            0% { filter: brightness(1); }
+            100% { filter: brightness(1.1); }
+        }
+
+        .subtitle {
+            text-align: center;
+            font-size: 1.3em;
+            color: #666;
+            margin-bottom: 40px;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+        }
+
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 15px 25px;
+            background: white;
+            border-radius: 30px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 2px solid transparent;
+            font-weight: 600;
+        }
+
+        .legend-item:hover {
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
+            border-color: #667eea;
+        }
+
+        .legend-color {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .load-color {
+            background: linear-gradient(45deg, #ff6b6b, #ff9999);
+            animation: colorPulse 2s ease-in-out infinite;
+        }
+
+        .resistance-color {
+            background: linear-gradient(45deg, #4ecdc4, #99ccff);
+            animation: colorPulse 2s ease-in-out infinite 0.5s;
+        }
+
+        @keyframes colorPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .controls {
+            text-align: center;
+            margin: 40px 0;
+        }
+
+        .animate-btn {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 18px 40px;
+            border-radius: 30px;
+            font-size: 1.2em;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.3);
+            position: relative;
+            overflow: hidden;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .animate-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .animate-btn:hover {
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 12px 30px rgba(102, 126, 234, 0.4);
+        }
+
+        .animate-btn:hover::before {
+            left: 100%;
+        }
+
+        .cases-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+            gap: 35px;
+            margin-bottom: 50px;
+        }
+
+        .case-card {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7));
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 2px solid transparent;
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(5px);
+        }
+
+        .case-card::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #667eea, #764ba2, #ff6b6b, #4ecdc4);
+            transform: scaleX(0);
+            transition: transform 0.5s ease;
+        }
+
+        .case-card:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+            border-color: #667eea;
+        }
+
+        .case-card:hover::after {
+            transform: scaleX(1);
+        }
+
+        .case-title {
+            font-size: 1.4em;
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: #333;
+            text-align: center;
+            line-height: 1.3;
+        }
+
+        .chart-container {
+            height: 280px;
+            margin: 25px 0;
+            position: relative;
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .histogram {
+            display: flex;
+            align-items: end;
+            height: 220px;
+            padding: 30px;
+            gap: 2px;
+            position: relative;
+        }
+
+        .histogram::before {
+            content: '';
+            position: absolute;
+            bottom: 30px;
+            left: 30px;
+            right: 30px;
+            height: 1px;
+            background: rgba(0, 0, 0, 0.2);
+            z-index: 1;
+        }
+
+        .bar {
+            transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 3px 3px 0 0;
+            position: relative;
+            cursor: pointer;
+            min-height: 2px;
+            z-index: 2;
+        }
+
+        .bar:hover {
+            transform: scaleY(1.15) scaleX(1.3);
+            filter: brightness(1.2);
+            z-index: 10;
+        }
+
+        .load-curve {
+            background: linear-gradient(to top, #ff6b6b 0%, #ff9999 50%, #ffb3b3 100%);
+            box-shadow: 0 0 10px rgba(255, 107, 107, 0.3);
+        }
+
+        .resistance-curve {
+            background: linear-gradient(to top, #4ecdc4 0%, #99ccff 50%, #b3d9ff 100%);
+            box-shadow: 0 0 10px rgba(78, 205, 196, 0.3);
+        }
+
+        .case-description {
+            font-size: 1em;
+            color: #555;
+            line-height: 1.8;
+            margin-bottom: 60px;
+            text-align: center;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 10px;
+        }
+
+        .probability-text {
+            font-weight: 700;
+            color: #e74c3c;
+            font-size: 1.2em;
+            display: block;
+            margin-top: 8px;
+            animation: probabilityBlink 2s ease-in-out infinite;
+        }
+
+        @keyframes probabilityBlink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .stats-panel {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7));
+            border-radius: 20px;
+            padding: 35px;
+            margin-top: 40px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .stats-title {
+            font-size: 1.6em;
+            font-weight: 700;
+            margin-bottom: 30px;
+            text-align: center;
+            color: #333;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 25px;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 25px 20px;
+            background: white;
+            border-radius: 15px;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            border: 2px solid transparent;
+        }
+
+        .stat-item:hover {
+            transform: translateY(-5px) scale(1.05);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+            border-color: #667eea;
+        }
+
+        .stat-value {
+            font-size: 2.5em;
+            font-weight: 800;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+        }
+
+        .stat-label {
+            color: #666;
+            font-weight: 600;
+            font-size: 1.1em;
+            margin-top: 8px;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.03); }
+        }
+
+        .case-card.active {
+            animation: pulse 1.5s ease-in-out 3;
+            border-color: #667eea;
+            box-shadow: 0 0 30px rgba(102, 126, 234, 0.4);
+        }
+
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(50px) scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .case-card {
+            animation: slideInUp 0.8s ease-out;
+        }
+
+        .case-card:nth-child(1) { animation-delay: 0.1s; }
+        .case-card:nth-child(2) { animation-delay: 0.3s; }
+        .case-card:nth-child(3) { animation-delay: 0.5s; }
+
+        .intersection-highlight {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(231, 76, 60, 0.8);
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: 600;
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+
+        .case-card:hover .intersection-highlight {
+            opacity: 1;
+            transform: translateX(-50%) translateY(-5px);
+            margin-bottom: 40px;
+        }
+
+        @media (max-width: 768px) {
+            .cases-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .title {
+                font-size: 2.2em;
+            }
+            
+            .legend {
+                flex-direction: column;
+                align-items: center;
+                gap: 20px;
+            }
+            
+            .animate-btn {
+                padding: 15px 30px;
+                font-size: 1em;
+            }
+        }
+
+        .tooltip {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 5px;
+            font-size: 0.9em;
+            pointer-events: none;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="title">Σχεδιασμός συντελεστή φορτίου και αντίστασης</h1>
+        <p class="subtitle">Load and Resistance Factor Design (LSFD)</p>
+
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-color load-color"></div>
+                <span>Φορτίο (Load)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color resistance-color"></div>
+                <span>Αντίσταση (Resistance)</span>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button class="animate-btn" onclick="animateCharts()">Ανάλυση Περιπτώσεων</button>
+        </div>
+
+        <div class="cases-container">
+            <!-- Περίπτωση 1 -->
+            <div class="case-card" id="case1">
+                <h3 class="case-title">Υπερβολικά συντηρητικοί συντελεστές<br>φορτίου και αντίστασης</h3>
+                <div class="chart-container">
+                    <div class="histogram" id="histogram1">
+                        <!-- Bars will be generated by JavaScript -->
+                    </div>
+                </div>
+                <div class="case-description">
+                    Σχεδιασμός σχεδόν μηδενικής αστοχίας<br>
+                    <span class="probability-text">Q/1000 (Pf=0,000)</span>
+                </div>
+                <div class="intersection-highlight">Περιοχή Ασφαλείας: 100%</div>
+            </div>
+
+            <!-- Περίπτωση 2 -->
+            <div class="case-card" id="case2">
+                <h3 class="case-title">Μη συντηρητικοί συντελεστές φορτίου και<br>αντίστασης</h3>
+                <div class="chart-container">
+                    <div class="histogram" id="histogram2">
+                        <!-- Bars will be generated by JavaScript -->
+                    </div>
+                </div>
+                <div class="case-description">
+                    Σχεδιασμός μη αποδεκτής πιθανότητας αστοχίας<br>
+                    <span class="probability-text">20/1000 (Pf=0,020)</span>
+                </div>
+                <div class="intersection-highlight">Επικίνδυνη Επικάλυψη!</div>
+            </div>
+
+            <!-- Περίπτωση 3 -->
+            <div class="case-card" id="case3">
+                <h3 class="case-title">Κατάλληλοι συντελεστές φορτίου και<br>αντίστασης</h3>
+                <div class="chart-container">
+                    <div class="histogram" id="histogram3">
+                        <!-- Bars will be generated by JavaScript -->
+                    </div>
+                </div>
+                <div class="case-description">
+                    Σχεδιασμός μικρής πιθανότητας αστοχίας<br>
+                    <span class="probability-text">1/1000 (Pf=0,001)</span>
+                </div>
+                <div class="intersection-highlight">Βέλτιστη Ισορροπία</div>
+            </div>
+        </div>
+
+        <div class="stats-panel">
+            <h3 class="stats-title">Συγκριτική Ανάλυση Πιθανοτήτων Αστοχίας</h3>
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <div class="stat-value">0.000</div>
+                    <div class="stat-label">Υπερβολικά Συντηρητικό</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">0.001</div>
+                    <div class="stat-label">Κατάλληλο</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">0.020</div>
+                    <div class="stat-label">Μη Αποδεκτό</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="tooltip" id="tooltip"></div>
+
+    <script>
+        // Data matching the exact diagrams from the image
+        const caseData = {
+            case1: {
+                // Case 1: Very conservative - no overlap (Q/1000)
+                load: [0, 0, 0, 22, 58, 121, 180, 222, 210, 128, 58, 22, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                resistance: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 22, 58, 121, 180, 222, 210, 128, 58, 22, 3, 0, 0],
+                overlap: 0.000,
+                color1: '#ff6b6b',
+                color2: '#4ecdc4'
+            },
+            case2: {
+                // Case 2: Non-conservative - significant overlap (20/1000)
+                load: [0, 0, 0, 22, 58, 121, 180, 190, 180, 128, 58, 22, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                resistance: [0, 0, 0, 0, 0, 0, 0, 3, 22, 58, 121, 180, 272, 210, 128, 58, 22, 3, 0, 0, 0, 0, 0, 0, 0],
+                overlap: 0.020,
+                color1: '#ff6b6b',
+                color2: '#4ecdc4'
+            },
+            case3: {
+                // Case 3: Appropriate - minimal overlap (1/1000)
+                load: [0, 0, 0, 22, 58, 121, 180, 190, 180, 128, 58, 22, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                resistance: [0, 0, 0, 0, 0, 0, 0, 0, 3, 22, 58, 121, 180, 233, 210, 128, 58, 22, 3, 0, 0, 0, 0, 0, 0],
+                overlap: 0.001,
+                color1: '#ff6b6b',
+                color2: '#4ecdc4'
+            }
+        };
+
+        const tooltip = document.getElementById('tooltip');
+
+        function createHistogram(containerId, data) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+            
+            const maxValue = Math.max(...data.load, ...data.resistance);
+            const totalBars = data.load.length;
+            
+            // Create bars with more realistic spacing
+            for (let i = 0; i < totalBars; i++) {
+                const loadHeight = data.load[i] > 0 ? (data.load[i] / maxValue) * 100 : 0;
+                const resistanceHeight = data.resistance[i] > 0 ? (data.resistance[i] / maxValue) * 100 : 0;
+                
+                // Create container for both load and resistance at this position
+                const barContainer = document.createElement('div');
+                barContainer.style.flex = '1';
+                barContainer.style.display = 'flex';
+                barContainer.style.alignItems = 'flex-end';
+                barContainer.style.position = 'relative';
+                barContainer.style.height = '100%';
+                
+                // Create load bar if it has a value
+                if (data.load[i] > 0) {
+                    const loadBar = document.createElement('div');
+                    loadBar.className = 'bar load-curve';
+                    loadBar.style.height = `${loadHeight}%`;
+                    loadBar.style.width = '100%';
+                    loadBar.style.position = 'absolute';
+                    loadBar.style.bottom = '0';
+                    loadBar.style.opacity = '0.8';
+                    loadBar.style.animationDelay = `${i * 0.05}s`;
+                    
+                    // Enhanced hover effects
+                    loadBar.addEventListener('mouseenter', function(e) {
+                        this.style.transform = 'scaleY(1.15) scaleX(1.3)';
+                        this.style.zIndex = '10';
+                        this.style.opacity = '1';
+                        showTooltip(e, `Φορτίο: ${data.load[i]}`, '#ff6b6b');
+                    });
+                    
+                    loadBar.addEventListener('mouseleave', function() {
+                        this.style.transform = 'scaleY(1) scaleX(1)';
+                        this.style.zIndex = '2';
+                        this.style.opacity = '0.8';
+                        hideTooltip();
+                    });
+                    
+                    barContainer.appendChild(loadBar);
+                }
+                
+                // Create resistance bar if it has a value
+                if (data.resistance[i] > 0) {
+                    const resistanceBar = document.createElement('div');
+                    resistanceBar.className = 'bar resistance-curve';
+                    resistanceBar.style.height = `${resistanceHeight}%`;
+                    resistanceBar.style.width = '100%';
+                    resistanceBar.style.position = 'absolute';
+                    resistanceBar.style.bottom = '0';
+                    resistanceBar.style.opacity = '0.8';
+                    resistanceBar.style.animationDelay = `${i * 0.05}s`;
+                    
+                    // If both load and resistance exist at same position, offset slightly
+                    if (data.load[i] > 0) {
+                        resistanceBar.style.transform = 'translateX(2px)';
+                        resistanceBar.style.opacity = '0.9';
+                    }
+                    
+                    resistanceBar.addEventListener('mouseenter', function(e) {
+                        this.style.transform = data.load[i] > 0 ? 'translateX(2px) scaleY(1.15) scaleX(1.3)' : 'scaleY(1.15) scaleX(1.3)';
+                        this.style.zIndex = '10';
+                        this.style.opacity = '1';
+                        showTooltip(e, `Αντοχή: ${data.resistance[i]}`, '#4ecdc4');
+                    });
+                    
+                    resistanceBar.addEventListener('mouseleave', function() {
+                        this.style.transform = data.load[i] > 0 ? 'translateX(2px) scaleY(1) scaleX(1)' : 'scaleY(1) scaleX(1)';
+                        this.style.zIndex = '2';
+                        this.style.opacity = data.load[i] > 0 ? '0.9' : '0.8';
+                        hideTooltip();
+                    });
+                    
+                    barContainer.appendChild(resistanceBar);
+                }
+                
+                container.appendChild(barContainer);
+            }
+        }
+
+        function showTooltip(e, text, color) {
+            tooltip.innerHTML = text;
+            tooltip.style.backgroundColor = color;
+            tooltip.style.left = e.pageX + 10 + 'px';
+            tooltip.style.top = e.pageY - 30 + 'px';
+            tooltip.style.opacity = '1';
+        }
+
+        function hideTooltip() {
+            tooltip.style.opacity = '0';
+        }
+
+        function animateCharts() {
+            const cases = ['case1', 'case2', 'case3'];
+            const button = document.querySelector('.animate-btn');
+            
+            // Disable button during animation
+            button.disabled = true;
+            button.style.opacity = '0.7';
+            
+            cases.forEach((caseId, index) => {
+                setTimeout(() => {
+                    const caseElement = document.getElementById(caseId);
+                    caseElement.classList.add('active');
+                    
+                    // Enhanced visual feedback
+                    caseElement.style.borderColor = '#667eea';
+                    caseElement.style.boxShadow = '0 0 30px rgba(102, 126, 234, 0.4)';
+                    
+                    // Remove active class after animation
+                    setTimeout(() => {
+                        caseElement.classList.remove('active');
+                        caseElement.style.borderColor = 'transparent';
+                        caseElement.style.boxShadow = '0 10px 30px rgba(0, 0, 0, 0.1)';
+                    }, 3000);
+                    
+                    // Recreate histogram with enhanced animation
+                    const histogramId = `histogram${index + 1}`;
+                    createHistogramAnimated(histogramId, caseData[caseId]);
+                    
+                }, index * 1000);
+            });
+            
+            // Re-enable button after all animations
+            setTimeout(() => {
+                button.disabled = false;
+                button.style.opacity = '1';
+            }, 4000);
+        }
+
+        function createHistogramAnimated(containerId, data) {
+            const container = document.getElementById(containerId);
+            const bars = container.querySelectorAll('.bar');
+            
+            // Create wave-like animation
+            bars.forEach((bar, index) => {
+                setTimeout(() => {
+                    bar.style.transform = 'scaleY(0)';
+                    bar.style.opacity = '0';
+                    
+                    setTimeout(() => {
+                        bar.style.transform = 'scaleY(1)';
+                        bar.style.opacity = '1';
+                        
+                        // Add temporary glow effect
+                        const isLoad = bar.classList.contains('load-curve');
+                        const glowColor = isLoad ? 'rgba(255, 107, 107, 0.6)' : 'rgba(78, 205, 196, 0.6)';
+                        bar.style.boxShadow = `0 0 20px ${glowColor}`;
+                        
+                        setTimeout(() => {
+                            bar.style.boxShadow = isLoad ? '0 0 10px rgba(255, 107, 107, 0.3)' : '0 0 10px rgba(78, 205, 196, 0.3)';
+                        }, 500);
+                        
+                    }, 150);
+                }, index * 100);
+            });
+        }
+
+        // Initialize histograms
+        function initializeCharts() {
+            createHistogram('histogram1', caseData.case1);
+            createHistogram('histogram2', caseData.case2);
+            createHistogram('histogram3', caseData.case3);
+        }
+
+        // Enhanced intersection highlighting
+        function highlightIntersections() {
+            const cases = document.querySelectorAll('.case-card');
+            cases.forEach((caseCard, index) => {
+                caseCard.addEventListener('mouseenter', function() {
+                    this.style.borderColor = '#667eea';
+                    this.style.transform = 'translateY(-8px) scale(1.02)';
+                    
+                    // Highlight corresponding stat
+                    const statItems = document.querySelectorAll('.stat-item');
+                    if (statItems[index]) {
+                        statItems[index].style.borderColor = '#667eea';
+                        statItems[index].style.transform = 'translateY(-5px) scale(1.05)';
+                    }
+                });
+                
+                caseCard.addEventListener('mouseleave', function() {
+                    this.style.borderColor = 'transparent';
+                    this.style.transform = 'translateY(0) scale(1)';
+                    
+                    // Reset stat highlighting
+                    const statItems = document.querySelectorAll('.stat-item');
+                    if (statItems[index]) {
+                        statItems[index].style.borderColor = 'transparent';
+                        statItems[index].style.transform = 'scale(1)';
+                    }
+                });
+            });
+        }
+
+        // Initialize everything when page loads
+        window.addEventListener('load', function() {
+            initializeCharts();
+            highlightIntersections();
+            
+            // Auto-animate after 3 seconds
+            setTimeout(() => {
+                animateCharts();
+            }, 3000);
+        });
+
+        // Enhanced click events with sound simulation
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('bar')) {
+                const isLoad = e.target.classList.contains('load-curve');
+                const color = isLoad ? '#ff6b6b' : '#4ecdc4';
+                
+                // Create ripple effect
+                e.target.style.boxShadow = `0 0 30px ${color}`;
+                e.target.style.transform = 'scale(1.2)';
+                
+                setTimeout(() => {
+                    e.target.style.boxShadow = isLoad ? '0 0 10px rgba(255, 107, 107, 0.3)' : '0 0 10px rgba(78, 205, 196, 0.3)';
+                    e.target.style.transform = 'scale(1)';
+                }, 600);
+                
+                // Create visual feedback particles
+                createParticleEffect(e.pageX, e.pageY, color);
+            }
+        });
+
+        // Particle effect function
+        function createParticleEffect(x, y, color) {
+            for (let i = 0; i < 8; i++) {
+                const particle = document.createElement('div');
+                particle.style.position = 'fixed';
+                particle.style.left = x + 'px';
+                particle.style.top = y + 'px';
+                particle.style.width = '4px';
+                particle.style.height = '4px';
+                particle.style.backgroundColor = color;
+                particle.style.borderRadius = '50%';
+                particle.style.pointerEvents = 'none';
+                particle.style.zIndex = '9999';
+                particle.style.opacity = '1';
+                
+                document.body.appendChild(particle);
+                
+                // Animate particle
+                const angle = (i / 8) * Math.PI * 2;
+                const distance = 50 + Math.random() * 30;
+                const finalX = x + Math.cos(angle) * distance;
+                const finalY = y + Math.sin(angle) * distance;
+                
+                particle.animate([
+                    { 
+                        left: x + 'px', 
+                        top: y + 'px', 
+                        opacity: 1,
+                        transform: 'scale(1)' 
+                    },
+                    { 
+                        left: finalX + 'px', 
+                        top: finalY + 'px', 
+                        opacity: 0,
+                        transform: 'scale(0)' 
+                    }
+                ], {
+                    duration: 800,
+                    easing: 'ease-out'
+                }).onfinish = () => {
+                    particle.remove();
+                };
+            }
+        }
+
+        // Add keyboard controls
+        document.addEventListener('keydown', function(e) {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                animateCharts();
+            }
+        });
+
+        // Add scroll-triggered animations
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.animation = 'slideInUp 0.8s ease-out';
+                    entry.target.style.animationFillMode = 'both';
+                }
+            });
+        }, observerOptions);
+
+        // Observe all case cards
+        document.querySelectorAll('.case-card').forEach(card => {
+            observer.observe(card);
+        });
+
+        // Enhanced stats animation
+        function animateStats() {
+            const statValues = document.querySelectorAll('.stat-value');
+            const values = ['0.000', '0.001', '0.020'];
+            
+            statValues.forEach((stat, index) => {
+                let current = 0;
+                const target = parseFloat(values[index]);
+                const increment = target / 50;
+                
+                const counter = setInterval(() => {
+                    current += increment;
+                    if (current >= target) {
+                        current = target;
+                        clearInterval(counter);
+                    }
+                    stat.textContent = current.toFixed(3);
+                }, 50);
+            });
+        }
+
+        // Trigger stats animation when stats panel is visible
+        const statsObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    setTimeout(animateStats, 500);
+                    statsObserver.unobserve(entry.target);
+                }
+            });
+        });
+
+        statsObserver.observe(document.querySelector('.stats-panel'));
+
+        // Add dynamic background animation
+        function createFloatingShapes() {
+            const container = document.querySelector('.container');
+            
+            for (let i = 0; i < 5; i++) {
+                const shape = document.createElement('div');
+                shape.style.position = 'absolute';
+                shape.style.width = Math.random() * 100 + 50 + 'px';
+                shape.style.height = shape.style.width;
+                shape.style.borderRadius = '50%';
+                shape.style.background = `linear-gradient(45deg, 
+                    rgba(102, 126, 234, 0.1), 
+                    rgba(118, 75, 162, 0.1))`;
+                shape.style.left = Math.random() * 100 + '%';
+                shape.style.top = Math.random() * 100 + '%';
+                shape.style.zIndex = '-1';
+                shape.style.animation = `float ${5 + Math.random() * 5}s ease-in-out infinite`;
+                shape.style.animationDelay = Math.random() * 2 + 's';
+                
+                container.appendChild(shape);
+            }
+        }
+
+        // CSS for floating animation
+        const floatingStyle = document.createElement('style');
+        floatingStyle.textContent = `
+            @keyframes float {
+                0%, 100% {
+                    transform: translateY(0px) rotate(0deg);
+                    opacity: 0.7;
+                }
+                50% {
+                    transform: translateY(-20px) rotate(180deg);
+                    opacity: 1;
+                }
+            }
+        `;
+        document.head.appendChild(floatingStyle);
+
+        // Initialize floating shapes
+        setTimeout(createFloatingShapes, 1000);
+
+        // Add performance monitoring
+        let animationFrameId;
+        function optimizedAnimation() {
+            // Cancel previous frame
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+            }
+            
+            // Schedule new frame
+            animationFrameId = requestAnimationFrame(() => {
+                // Smooth animation logic here
+            });
+        }
+
+        // Cleanup function
+        window.addEventListener('beforeunload', () => {
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+            }
+            observer.disconnect();
+            statsObserver.disconnect();
+        });
+    </script>
+</body>
+</html>
